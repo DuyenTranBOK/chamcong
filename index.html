@@ -33,6 +33,9 @@
   button:disabled { opacity: .5; }
   .btn-blue { background: #1a73e8; color: #fff; }
   .btn-punch { background: #16a34a; color: #fff; font-size: 22px; padding: 22px; margin-bottom: 12px; }
+  .btn-out { background: #ea580c; color: #fff; font-size: 17px; padding: 16px; margin-bottom: 12px; line-height: 1.3; }
+  .row > * { min-width: 0; }
+  input[type=date], input[type=time] { -webkit-appearance: none; appearance: none; min-width: 0; display: block; min-height: 46px; text-align: left; }
   .btn-light { background: #e5e7eb; color: #111; padding: 8px 12px; width: auto; font-size: 14px; }
   .row { display: flex; gap: 10px; }
   .row > * { flex: 1; }
@@ -89,7 +92,7 @@
     <button class="btn-blue" id="lgBtn" onclick="login()">Tiếp tục</button>
     <div id="lgMsg" style="margin-top:10px"></div>
     <p style="text-align:center;margin:14px 0 0"><a href="#" onclick="apOpen();return false" style="color:#1a73e8">🔑 Người duyệt đơn (Trưởng VP / Ban Giám Đốc)</a></p>
-    <p class="muted" style="text-align:center;margin:10px 0 0;font-size:11px">Bản app: 4.0 (cài trên điện thoại)</p>
+    <p class="muted" style="text-align:center;margin:10px 0 0;font-size:11px">Bản app: 4.1 (cài trên điện thoại)</p>
   </div>
 
   <!-- XÁC NHẬN BẰNG MÃ EMAIL (người duyệt mỗi lần mở app / nhân viên lần đầu trên điện thoại) -->
@@ -109,7 +112,7 @@
     </div>
     <div id="otpMsg" style="margin-top:10px"></div>
     <button class="btn-light" style="margin-top:10px;width:100%" onclick="otpBack()">← Quay lại</button>
-    <p class="muted" style="text-align:center;margin:10px 0 0;font-size:11px">Bản app: 4.0 (cài trên điện thoại)</p>
+    <p class="muted" style="text-align:center;margin:10px 0 0;font-size:11px">Bản app: 4.1 (cài trên điện thoại)</p>
   </div>
 
   <!-- NGƯỜI DUYỆT: danh sách đơn chờ duyệt -->
@@ -183,7 +186,7 @@
         <textarea id="ngoaiLyDo" rows="2" placeholder="Lý do (bắt buộc), VD: Đi gặp khách hàng ABC"></textarea>
       </div>
       <button class="btn-punch" id="btnPunch" onclick="mainPunch()">📷 QUÉT MÃ QR & CHẤM CÔNG</button>
-      <p id="noQrLink" style="text-align:center;margin:-4px 0 12px"><a href="#" onclick="noQrPunch();return false" style="color:#6b7280;font-size:14px">Đang ở ngoài văn phòng? Chấm công không quét mã</a></p>
+      <button class="btn-out" id="noQrLink" onclick="noQrPunch()">🚶 ĐANG Ở NGOÀI VĂN PHÒNG<br><span style="font-size:14px;font-weight:600">Chấm công không quét mã (phải ghi lý do)</span></button>
       <!-- Chấm công thành công -->
       <div class="card hide" id="punchDone" style="text-align:center;border:2px solid #16a34a;background:#f0fdf4">
         <div style="font-size:52px;line-height:1">✅</div>
@@ -514,7 +517,7 @@ function renderVp() {
     h = '<div class="msg vp-bad" style="margin:0 0 8px">❌ Mã QR không hợp lệ – quét mã mới tại văn phòng.</div>' + vpSelect(st);
     m = '<div class="msg vp-bad" style="margin:0">❌ Mã QR không hợp lệ. Bạn vẫn có thể giải trình, xin phép, xem lịch sử.</div>';
   } else {
-    h = '<div class="msg vp-none" style="margin:0 0 8px">Bấm nút xanh để quét mã QR dán tại văn phòng</div>' + vpSelect(st);
+    h = '<div class="msg vp-none" id="vpHint" style="margin:0 0 8px">Bấm nút xanh để quét mã QR dán tại văn phòng</div>' + vpSelect(st);
     m = '<div class="msg vp-none" style="margin:0">Bạn muốn làm gì? <span class="muted">(Chấm công cần quét mã QR tại văn phòng)</span></div>';
   }
   $('vpCard').innerHTML = h;
@@ -583,6 +586,7 @@ function punch() {
     $('doneWarn').innerHTML = (d.notes || []).map(function (x) { return '<span class="pill p-wait" style="margin:2px">' + esc(x) + '</span>'; }).join(' ');
     $('btnPunch').classList.add('hide'); $('noQrLink').classList.add('hide');
     $('punchDone').classList.remove('hide');
+    setPunchBtn();
     S.doneAt = Date.now();
     window.scrollTo(0, 0);
   }).catch(function (e) {
@@ -606,7 +610,9 @@ function setPunchBtn() {
   if (!$('ngoaiCard').classList.contains('hide')) b.textContent = '📨 Gửi lý do & chấm công';
   else if (hasQr()) b.textContent = '📍 CHẤM CÔNG';
   else b.textContent = '📷 QUÉT MÃ QR & CHẤM CÔNG';
-  $('noQrLink').classList.toggle('hide', hasQr() || !$('ngoaiCard').classList.contains('hide') || !$('punchDone').classList.contains('hide'));
+  var done = !$('punchDone').classList.contains('hide');
+  $('noQrLink').classList.toggle('hide', hasQr() || !$('ngoaiCard').classList.contains('hide') || done);
+  if ($('vpHint')) $('vpHint').classList.toggle('hide', done);     // chấm xong → bỏ dòng "Bấm nút xanh..."
 }
 function mainPunch() {
   if (!$('ngoaiCard').classList.contains('hide') || hasQr()) { punch(); return; }
